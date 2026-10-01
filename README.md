@@ -6,6 +6,28 @@ memory for Power Apps through SharePoint.
 
 Power Apps is the target analyst UI. The existing Streamlit app is retained as an optional local debug UI.
 
+## Architecture Overview
+
+```mermaid
+flowchart LR
+    A["Slack Channel<br/>PDFs + analyst notes"] --> B["Dockerized Python Ingestion"]
+    B --> C["PDF Analysis<br/>CVEs, technologies, threats, evidence"]
+    B --> D["Structured Slack Notes<br/>analyst, document, comments"]
+    C --> E["Local Semantic Memory<br/>SQLite + similarity history"]
+    C --> F["Structured Repository<br/>documents, findings, indicators"]
+    D --> F
+    E --> G["Duplicate / Related Repeat Detection"]
+    F --> H["Power Apps-Style Local UI<br/>dashboard, documents, findings, phase 1 memory"]
+    G --> H
+    F -. "future production target" .-> I["SharePoint Lists<br/>Power Apps data source"]
+    I -.-> J["Power Apps<br/>analyst review workflow"]
+```
+
+The local POC keeps the same shape as the planned production flow: Slack feeds Python, Python stores structured
+memory, and analysts review document history, findings, evidence, duplicate activity, and comments through a
+Power Apps-style experience. Today the repository backend can run locally; later the same payloads can publish to
+SharePoint lists for a real Power Apps implementation.
+
 ## Prerequisites
 
 Install only:
