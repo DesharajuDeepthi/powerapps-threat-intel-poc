@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SENTENCE_TRANSFORMERS_HOME: /app/data/model_cache
+    volumes:
+      - ./downloads:/app/downloads
+      - ./documents:/app/documents
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./data:/app/data
+    stdin_open: true
+    tty: true
+
+  ui:
+    build:
+      context: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SENTENCE_TRANSFORMERS_HOME: /app/data/model_cache
+    volumes:
+      - ./downloads:/app/downloads
+      - ./documents:/app/documents
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./data:/app/data
+    ports:
+      - "8501:8501"
+    command:
+      - streamlit
+      - run
+      - streamlit_app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+
+  powerapp:
+    build:
+      context: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SENTENCE_TRANSFORMERS_HOME: /app/data/model_cache
+      POWER_APP_PROTOTYPE_PORT: 8601
+    volumes:
+      - ./downloads:/app/downloads
+      - ./documents:/app/documents
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./data:/app/data
+    ports:
+      - "8601:8601"
+    command:
+      - python
+      - power_app_prototype.py

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Threat Intelligence Power App Prototype</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="left-rail">
+        <div class="brand">
+          <span class="brand-mark">TI</span>
+          <span>Threat Intel</span>
+        </div>
+        <button class="nav-button" data-screen="phase1">Phase 1</button>
+        <button class="nav-button is-active" data-screen="dashboard">Dashboard</button>
+        <button class="nav-button" data-screen="documents">Documents</button>
+        <button class="nav-button" data-screen="findings">Findings</button>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <h1 id="screenTitle">Dashboard</h1>
+            <p id="screenSubtitle">Slack PDF analysis and analyst review</p>
+          </div>
+          <div class="topbar-actions">
+            <label class="date-filter">Period
+              <select id="dateFilterMode">
+                <option value="all">All time</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="month">This month</option>
+                <option value="date">Select date</option>
+                <option value="customMonth">Select month</option>
+              </select>
+            </label>
+            <label id="specificDateWrap" class="date-filter is-hidden">Date
+              <input id="dateFilterDate" type="date">
+            </label>
+            <label id="specificMonthWrap" class="date-filter is-hidden">Month
+              <input id="dateFilterMonth" type="month">
+            </label>
+            <button id="refreshButton" class="command-button">Refresh</button>
+          </div>
+        </header>
+
+        <section id="dashboard" class="screen is-visible">
+          <div class="metric-grid">
+            <article class="metric"><span>Documents</span><strong id="metricDocuments">0</strong></article>
+            <article class="metric"><span>High Attention</span><strong id="metricHigh">0</strong></article>
+            <article class="metric"><span>Review Required</span><strong id="metricReview">0</strong></article>
+            <article class="metric"><span>CVEs</span><strong id="metricCves">0</strong></article>
+            <article class="metric"><span>On-Call Records</span><strong id="metricOnCall">0</strong></article>
+            <article class="metric"><span>Re-Seen Items</span><strong id="metricDuplicates">0</strong></article>
+            <article class="metric"><span>Actions</span><strong id="metricActions">0</strong></article>
+          </div>
+
+          <div class="section-row">
+            <section class="panel wide">
+              <div class="panel-header">
+                <h2>Recent Documents</h2>
+              </div>
+              <div id="recentDocumentsGallery" class="gallery"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Open Findings</h2>
+              </div>
+              <div id="openFindingsGallery" class="compact-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="phase1" class="screen">
+          <div class="metric-grid">
+            <article class="metric"><span>PDFs in Period</span><strong id="metricTodayDocuments">0</strong></article>
+            <article class="metric"><span>Duplicate Activity</span><strong id="metricTodayDuplicates">0</strong></article>
+            <article class="metric"><span>Related Repeats</span><strong id="metricRelatedRepeats">0</strong></article>
+            <article class="metric"><span>Inputs Added</span><strong id="metricManualInputs">0</strong></article>
+          </div>
+
+          <div class="split-layout phase-one-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Slack Intake Memory</h2>
+              </div>
+              <div class="helper-copy">
+                Support adds structured notes in Slack. The pipeline stores them here with sender details.
+              </div>
+              <form id="onCallForm" class="intake-form">
+                <label>Document Name
+                  <select name="documentName" id="onCallDocumentName" required>
+                    <option value="">Select Slack document</option>
+                  </select>
+                </label>
+                <input name="documentId" id="onCallDocumentId" type="hidden">
+                <input name="localFileName" id="onCallLocalFileName" type="hidden">
+                <input name="pdfUrl" id="onCallPdfUrl" type="hidden">
+                <label>Threat <input name="threatName"></label>
+                <label>CVE <input name="cve" id="onCallCve" placeholder="CVE-2021-34473"></label>
+                <label>Technology <input name="technology" placeholder="Microsoft Exchange"></label>
+                <label>Source
+                  <select name="source">
+                    <option>Slack</option>
+                    <option>Email</option>
+                    <option>Manual</option>
+                    <option>Vendor Advisory</option>
+                  </select>
+                </label>
+                <label>Status
+                  <select name="status">
+                    <option>New</option>
+                    <option>Review Required</option>
+                    <option>Under Review</option>
+                    <option>Action Required</option>
+                    <option>Reviewed</option>
+                    <option>Closed</option>
+                  </select>
+                </label>
+                <label>Decision
+                  <select name="decision">
+                    <option>Investigate</option>
+                    <option>Action Required</option>
+                    <option>Agree With System</option>
+                    <option>Informational</option>
+                    <option>False Positive</option>
+                    <option>Not Applicable</option>
+                    <option>Remediated</option>
+                  </select>
+                </label>
+                <label>Analyst Name <input name="analystName"></label>
+                <label>Analyst Email <input name="analystEmail" type="email"></label>
+                <label class="full">On-Call Note <textarea name="comment"></textarea></label>
+                <div id="onCallSeenBanner" class="seen-banner full" hidden></div>
+                <div class="full"><button class="primary-button" type="submit">Manual Backfill</button></div>
+                <div id="onCallToast" class="toast full" hidden></div>
+              </form>
+            </section>
+
+            <section class="panel detail-panel">
+              <div class="panel-header">
+                <h2>Slack Memory Register</h2>
+              </div>
+              <div class="filter-bar compact-filter">
+                <input id="onCallSearch" type="search" placeholder="Search document, threat, CVE, technology">
+                <select id="onCallStatus">
+                  <option value="">All status</option>
+                  <option>New</option>
+                  <option>Review Required</option>
+                  <option>Under Review</option>
+                  <option>Action Required</option>
+                  <option>Reviewed</option>
+                  <option>Closed</option>
+                </select>
+              </div>
+              <div id="onCallRecordsGallery" class="gallery"></div>
+              <div id="onCallDetail" class="detail-empty">Select an on-call record</div>
+            </section>
+          </div>
+
+          <section class="panel phase-one-duplicates">
+            <div class="panel-header">
+              <h2>Re-Seen From Slack</h2>
+            </div>
+            <div id="duplicateEventsGallery" class="compact-list"></div>
+          </section>
+        </section>
+
+        <section id="documents" class="screen">
+          <div class="filter-bar">
+            <input id="documentSearch" type="search" placeholder="Search documents or threat">
+            <select id="documentRelevance">
+              <option value="">All relevance</option>
+              <option>HIGH</option>
+              <option>REVIEW</option>
+              <option>INFORMATIONAL</option>
+            </select>
+            <select id="documentStatus">
+              <option value="">All status</option>
+              <option>SUCCESS</option>
+              <option>FAILED</option>
+            </select>
+          </div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Documents</h2>
+              </div>
+              <div id="documentsGallery" class="gallery"></div>
+            </section>
+            <section class="panel detail-panel">
+              <div id="documentDetail" class="detail-empty">Select a document</div>
+            </section>
+          </div>
+        </section>
+
+        <section id="findings" class="screen">
+          <div class="filter-bar">
+            <input id="findingSearch" type="search" placeholder="Search CVE, technology, vendor">
+            <select id="findingRelevance">
+              <option value="">All relevance</option>
+              <option>HIGH</option>
+              <option>REVIEW</option>
+              <option>INFORMATIONAL</option>
+            </select>
+            <select id="findingStatus">
+              <option value="">All status</option>
+              <option>Review Required</option>
+              <option>Under Review</option>
+              <option>Action Required</option>
+              <option>Reviewed</option>
+              <option>Closed</option>
+            </select>
+          </div>
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Findings</h2>
+              </div>
+              <div id="findingsGallery" class="gallery"></div>
+            </section>
+            <section class="panel detail-panel">
+              <div id="findingDetail" class="detail-empty">Select a finding</div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="documentCardTemplate">
+      <button class="gallery-card">
+        <span class="eyebrow"></span>
+        <strong></strong>
+        <span class="muted"></span>
+        <span class="pill-row"></span>
+      </button>
+    </template>
+
+    <template id="findingCardTemplate">
+      <button class="gallery-card">
+        <span class="eyebrow"></span>
+        <strong></strong>
+        <span class="muted"></span>
+        <span class="pill-row"></span>
+      </button>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
